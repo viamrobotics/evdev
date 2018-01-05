@@ -1,6 +1,3 @@
-// This file is subject to a 1-clause BSD license.
-// Its contents can be found in the enclosed LICENSE file.
-
 package evdev
 
 import (
@@ -9,6 +6,7 @@ import (
 	"unsafe"
 )
 
+// ioctl wraps sending an ioctl syscall.
 func ioctl(fd, name uintptr, data interface{}) error {
 	var v uintptr
 
@@ -52,15 +50,15 @@ var (
 
 func init() {
 	var i int32
-	var id Id
-	var ke KeymapEntry
-	var ffe Effect
+	var id ID
+	var km KeyMap
+	var e Effect
 
 	sizeof_int := int(unsafe.Sizeof(i))
 	sizeof_int2 := sizeof_int << 1
 	sizeof_id := int(unsafe.Sizeof(id))
-	sizeof_keymap_entry := int(unsafe.Sizeof(ke))
-	sizeof_effect := int(unsafe.Sizeof(ffe))
+	sizeof_keymap := int(unsafe.Sizeof(km))
+	sizeof_effect := int(unsafe.Sizeof(e))
 
 	_EVIOCGVERSION = _IOR('E', 0x01, sizeof_int)
 	_EVIOCGID = _IOR('E', 0x02, sizeof_id)
@@ -68,9 +66,9 @@ func init() {
 	_EVIOCSREP = _IOW('E', 0x03, sizeof_int2)
 
 	_EVIOCGKEYCODE = _IOR('E', 0x04, sizeof_int2)
-	_EVIOCGKEYCODE_V2 = _IOR('E', 0x04, sizeof_keymap_entry)
+	_EVIOCGKEYCODE_V2 = _IOR('E', 0x04, sizeof_keymap)
 	_EVIOCSKEYCODE = _IOW('E', 0x04, sizeof_int2)
-	_EVIOCSKEYCODE_V2 = _IOW('E', 0x04, sizeof_keymap_entry)
+	_EVIOCSKEYCODE_V2 = _IOW('E', 0x04, sizeof_keymap)
 
 	_EVIOCSFF = _IOC(_IOC_WRITE, 'E', 0x80, sizeof_effect)
 	_EVIOCRMFF = _IOW('E', 0x81, sizeof_int)
@@ -79,53 +77,53 @@ func init() {
 	_EVIOCSCLOCKID = _IOW('E', 0xa0, sizeof_int)
 }
 
-func _EVIOCGNAME(len int) uintptr {
-	return _IOC(_IOC_READ, 'E', 0x06, len)
+func _EVIOCGNAME(n int) uintptr {
+	return _IOC(_IOC_READ, 'E', 0x06, n)
 }
 
-func _EVIOCGPHYS(len int) uintptr {
-	return _IOC(_IOC_READ, 'E', 0x07, len)
+func _EVIOCGPHYS(n int) uintptr {
+	return _IOC(_IOC_READ, 'E', 0x07, n)
 }
 
-func _EVIOCGUNIQ(len int) uintptr {
-	return _IOC(_IOC_READ, 'E', 0x08, len)
+func _EVIOCGUNIQ(n int) uintptr {
+	return _IOC(_IOC_READ, 'E', 0x08, n)
 }
 
-func _EVIOCGPROP(len int) uintptr {
-	return _IOC(_IOC_READ, 'E', 0x09, len)
+func _EVIOCGPROP(n int) uintptr {
+	return _IOC(_IOC_READ, 'E', 0x09, n)
 }
 
-func _EVIOCGMTSLOTS(len int) uintptr {
-	return _IOC(_IOC_READ, 'E', 0x0a, len)
+func _EVIOCGMTSLOTS(n int) uintptr {
+	return _IOC(_IOC_READ, 'E', 0x0a, n)
 }
 
-func _EVIOCGKEY(len int) uintptr {
-	return _IOC(_IOC_READ, 'E', 0x18, len)
+func _EVIOCGKEY(n int) uintptr {
+	return _IOC(_IOC_READ, 'E', 0x18, n)
 }
 
-func _EVIOCGLED(len int) uintptr {
-	return _IOC(_IOC_READ, 'E', 0x19, len)
+func _EVIOCGLED(n int) uintptr {
+	return _IOC(_IOC_READ, 'E', 0x19, n)
 }
 
-func _EVIOCGSND(len int) uintptr {
-	return _IOC(_IOC_READ, 'E', 0x1a, len)
+func _EVIOCGSND(n int) uintptr {
+	return _IOC(_IOC_READ, 'E', 0x1a, n)
 }
 
-func _EVIOCGSW(len int) uintptr {
-	return _IOC(_IOC_READ, 'E', 0x1b, len)
+func _EVIOCGSW(n int) uintptr {
+	return _IOC(_IOC_READ, 'E', 0x1b, n)
 }
 
-func _EVIOCGBIT(ev, len int) uintptr {
-	return _IOC(_IOC_READ, 'E', 0x20+ev, len)
+func _EVIOCGBIT(ev, n int) uintptr {
+	return _IOC(_IOC_READ, 'E', 0x20+ev, n)
 }
 
 func _EVIOCGABS(abs int) uintptr {
-	var v AbsInfo
+	var v Axis
 	return _IOR('E', 0x40+abs, int(unsafe.Sizeof(v)))
 }
 
 func _EVIOCSABS(abs int) uintptr {
-	var v AbsInfo
+	var v Axis
 	return _IOW('E', 0xc0+abs, int(unsafe.Sizeof(v)))
 }
 
