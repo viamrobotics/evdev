@@ -4,16 +4,21 @@ package evdev
 import (
 	"bytes"
 	"context"
-	"errors"
 	"fmt"
 	"os"
 	"sync"
 	"unsafe"
 )
 
+const (
+	// DefaultPollSize is the default number of events to poll.
+	DefaultPollSize = 64
+)
+
 // Evdev represents an evdev device.
 type Evdev struct {
-	fd *os.File
+	fd       *os.File
+	pollSize int
 
 	id        ID
 	name      string
@@ -169,7 +174,7 @@ func (d *Evdev) Version() (int, int, int) {
 	return int(d.version>>16) & 0xffff, int(d.version>>8) & 0xff, int(d.version) & 0xff
 }
 
-// eventTypes retrieves the specified event type
+// eventTypes retrieves the specified event type, and passes it to f.
 func (d *Evdev) eventTypes(typ, max int, f func(int)) error {
 	buf := make([]uint64, max/64+1*(max%64))
 	err := ioctl(d.fd.Fd(), _EVIOCGBIT(typ, max), unsafe.Pointer(&buf[0]))
@@ -465,40 +470,67 @@ func (d *Evdev) KeyMapSet(m KeyMap) error {
 
 // Poll polls the device for incoming events.
 //
-// Change the buffer size by specifying n.
+// Change the buffer size by specifying PollSize.
 //
 // Polling continues to run until the context is closed.
-func (d *Evdev) Poll(ctxt context.Context, n int) (<-chan Event, error) {
-	if n <= 0 {
-		return nil, errors.New("invalid channel buffer size")
+func (d *Evdev) Poll(ctxt context.Context) <-chan EventEnvelope {
+	count := d.pollSize
+	if count == 0 {
+		count = DefaultPollSize
 	}
 
-	ch := make(chan Event)
+	ch := make(chan EventEnvelope)
 	go func() {
 		defer close(ch)
 
-		var e Event
-		size := int(unsafe.Sizeof(e))
-		buf := make([]byte, size*n)
-
+		buf := make([]byte, sizeof_event*count)
 		for {
+			// check context
 			select {
 			case <-ctxt.Done():
 				return
 			default:
 			}
 
+			// read events
 			i, err := d.fd.Read(buf)
 			if err != nil {
 				return
 			}
-			evt := (*(*[1<<27 - 1]Event)(unsafe.Pointer(&buf[0])))[:i/size]
-			for _, e = range evt {
-				ch <- e
+			events := (*(*[1<<27 - 1]Event)(unsafe.Pointer(&buf[0])))[:i/sizeof_event]
+			for _, e := range events {
+				switch e.Type {
+				case EventSync:
+					ch <- EventEnvelope{e, SyncType(e.Code)}
+				case EventKey:
+					ch <- EventEnvelope{e, KeyType(e.Code)}
+				case EventRelative:
+					ch <- EventEnvelope{e, RelativeType(e.Code)}
+				case EventAbsolute:
+					ch <- EventEnvelope{e, AbsoluteType(e.Code)}
+				case EventMisc:
+					ch <- EventEnvelope{e, MiscType(e.Code)}
+				case EventSwitch:
+					ch <- EventEnvelope{e, SwitchType(e.Code)}
+				case EventLED:
+					ch <- EventEnvelope{e, LEDType(e.Code)}
+				case EventSound:
+					ch <- EventEnvelope{e, SoundType(e.Code)}
+				case EventRepeat:
+					ch <- EventEnvelope{e, RepeatType(e.Code)}
+				case EventEffect:
+					ch <- EventEnvelope{e, EffectType(e.Code)}
+				case EventPower:
+					ch <- EventEnvelope{e, PowerType(e.Code)}
+				case EventEffectStatus:
+					ch <- EventEnvelope{e, EffectStatusType(e.Code)}
+				default:
+					ch <- EventEnvelope{e, nil}
+				}
 			}
 		}
 	}()
-	return ch, nil
+	return ch
 }
 
 // Send sends an event to the device.
@@ -510,17 +542,16 @@ func (d *Evdev) Send(ev Event) error {
 		d.out = make(chan Event, 1)
 		go func() {
 			defer close(d.out)
-			var e Event
-			size := int(unsafe.Sizeof(e))
+			var event Event
 			for {
 				select {
-				case e = <-d.out:
-					buf := (*(*[1<<27 - 1]byte)(unsafe.Pointer(&e)))[:size]
+				case event = <-d.out:
+					buf := (*(*[1<<27 - 1]byte)(unsafe.Pointer(&event)))[:sizeof_event]
 					n, err := d.fd.Write(buf)
 					if err != nil {
 						return
 					}
-					if n < size {
+					if n < sizeof_event {
 						fmt.Fprintf(os.Stderr, "poll outbox: short write\n")
 					}
 

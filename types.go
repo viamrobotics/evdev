@@ -7,22 +7,34 @@ import (
 
 // ID represents the device identity.
 //
-// The bus type is the only field that contains accurate data. It can be
-// compared to the BusXXX constants.
+// BusType is the bus type reported by the device (Bluetooth, USB, ...).
 //
-// The vendor, product and version fields are bus type-specific information
-// relating to the identity of the device.
+// The vendor, product and version fields are the device identifiers.
 //
-// Modern devices (typically using PCI or USB) do have information that can be
-// used, but legacy devices (such as serial mice,
-//
-// PS/2 keyboards and game ports on ISA sound cards) do not. These numbers
-// therefore are not meaningful for some values of bus type.
+// Most modern devices (ie PCI, USB, Bluetooth, ...) devices have will
+// correctly provide the vendor and product information, however legacy devices
+// (such as serial mice, keyboards, etc.) will typically not have this
+// information available. As such, these values are only meaningful in the
+// context of interacting with a known, specific device.
 type ID struct {
 	BusType BusType
 	Vendor  uint16
 	Product uint16
 	Version uint16
+}
+
+// Event represents a event.
+type Event struct {
+	Time  syscall.Timeval
+	Type  EventType
+	Code  uint16
+	Value int32
+}
+
+// Event wraps a event.
+type EventEnvelope struct {
+	Event
+	Type interface{}
 }
 
 // Axis provides information for a specific absolute axis. This applies to
@@ -45,14 +57,6 @@ type Axis struct {
 
 	// Res is the size of any error present.
 	Res int32
-}
-
-// Event represents a generic input event.
-type Event struct {
-	Time  syscall.Timeval
-	Type  EventType
-	Code  uint16
-	Value int32
 }
 
 // KeyMap is used to retrieve and modify keymap data. Users have option of
@@ -224,12 +228,12 @@ type RampEffect struct {
 
 // ConditionEffect wraps the data for a condition force feedback effect.
 type ConditionEffect struct {
-	SaturationRight  uint16
-	SaturationLeft   uint16
-	CoeffecientRight int16
-	CoeffecientLeft  int16
-	Deadband         uint16
-	Center           int16
+	SaturationRight uint16
+	SaturationLeft  uint16
+	CoeffRight      int16
+	CoeffLeft       int16
+	Deadband        uint16
+	Center          int16
 }
 
 // PeriodicEffect wraps the data for a periodic (waveform) force feedback

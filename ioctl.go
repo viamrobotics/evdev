@@ -21,15 +21,14 @@ func ioctl(fd, name uintptr, data interface{}) error {
 		v = dd
 
 	default:
-		return fmt.Errorf("ioctl: Invalid argument: %T", data)
+		return fmt.Errorf("ioctl: data has invalid type %T", data)
 	}
 
 	_, _, errno := syscall.RawSyscall(syscall.SYS_IOCTL, fd, name, v)
-	if errno == 0 {
-		return nil
+	if errno != 0 {
+		return errno
 	}
-
-	return errno
+	return nil
 }
 
 var (
@@ -46,19 +45,29 @@ var (
 	_EVIOCGEFFECTS    uintptr
 	_EVIOCGRAB        uintptr
 	_EVIOCSCLOCKID    uintptr
+
+	// sizes
+	sizeof_int    int
+	sizeof_int2   int
+	sizeof_id     int
+	sizeof_keymap int
+	sizeof_effect int
+	sizeof_event  int
 )
 
 func init() {
 	var i int32
 	var id ID
-	var km KeyMap
-	var e Effect
+	var keymap KeyMap
+	var effect Effect
+	var event Event
 
-	sizeof_int := int(unsafe.Sizeof(i))
-	sizeof_int2 := sizeof_int << 1
-	sizeof_id := int(unsafe.Sizeof(id))
-	sizeof_keymap := int(unsafe.Sizeof(km))
-	sizeof_effect := int(unsafe.Sizeof(e))
+	sizeof_int = int(unsafe.Sizeof(i))
+	sizeof_int2 = sizeof_int << 1
+	sizeof_id = int(unsafe.Sizeof(id))
+	sizeof_keymap = int(unsafe.Sizeof(keymap))
+	sizeof_effect = int(unsafe.Sizeof(effect))
+	sizeof_event = int(unsafe.Sizeof(event))
 
 	_EVIOCGVERSION = _IOR('E', 0x01, sizeof_int)
 	_EVIOCGID = _IOR('E', 0x02, sizeof_id)
