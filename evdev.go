@@ -473,13 +473,13 @@ func (d *Evdev) KeyMapSet(m KeyMap) error {
 // Change the buffer size by specifying PollSize.
 //
 // Polling continues to run until the context is closed.
-func (d *Evdev) Poll(ctxt context.Context) <-chan EventEnvelope {
+func (d *Evdev) Poll(ctxt context.Context) <-chan *EventEnvelope {
 	count := d.pollSize
 	if count == 0 {
 		count = DefaultPollSize
 	}
 
-	ch := make(chan EventEnvelope)
+	ch := make(chan *EventEnvelope)
 	go func() {
 		defer close(ch)
 
@@ -501,31 +501,31 @@ func (d *Evdev) Poll(ctxt context.Context) <-chan EventEnvelope {
 			for _, e := range events {
 				switch e.Type {
 				case EventSync:
-					ch <- EventEnvelope{e, SyncType(e.Code)}
+					ch <- &EventEnvelope{e, SyncType(e.Code)}
 				case EventKey:
-					ch <- EventEnvelope{e, KeyType(e.Code)}
+					ch <- &EventEnvelope{e, KeyType(e.Code)}
 				case EventRelative:
-					ch <- EventEnvelope{e, RelativeType(e.Code)}
+					ch <- &EventEnvelope{e, RelativeType(e.Code)}
 				case EventAbsolute:
-					ch <- EventEnvelope{e, AbsoluteType(e.Code)}
+					ch <- &EventEnvelope{e, AbsoluteType(e.Code)}
 				case EventMisc:
-					ch <- EventEnvelope{e, MiscType(e.Code)}
+					ch <- &EventEnvelope{e, MiscType(e.Code)}
 				case EventSwitch:
-					ch <- EventEnvelope{e, SwitchType(e.Code)}
+					ch <- &EventEnvelope{e, SwitchType(e.Code)}
 				case EventLED:
-					ch <- EventEnvelope{e, LEDType(e.Code)}
+					ch <- &EventEnvelope{e, LEDType(e.Code)}
 				case EventSound:
-					ch <- EventEnvelope{e, SoundType(e.Code)}
+					ch <- &EventEnvelope{e, SoundType(e.Code)}
 				case EventRepeat:
-					ch <- EventEnvelope{e, RepeatType(e.Code)}
+					ch <- &EventEnvelope{e, RepeatType(e.Code)}
 				case EventEffect:
-					ch <- EventEnvelope{e, EffectType(e.Code)}
+					ch <- &EventEnvelope{e, EffectType(e.Code)}
 				case EventPower:
-					ch <- EventEnvelope{e, PowerType(e.Code)}
+					ch <- &EventEnvelope{e, PowerType(e.Code)}
 				case EventEffectStatus:
-					ch <- EventEnvelope{e, EffectStatusType(e.Code)}
+					ch <- &EventEnvelope{e, EffectStatusType(e.Code)}
 				default:
-					ch <- EventEnvelope{e, nil}
+					ch <- &EventEnvelope{e, nil}
 				}
 			}
 		}
