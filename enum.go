@@ -616,58 +616,61 @@ const (
 	keyMax = 0x2ff
 )
 
-// Mouse buttons.
+// Mouse and gamepad buttons.
 const (
-	Btn0              KeyType = 0x100
-	Btn1              KeyType = 0x101
-	Btn2              KeyType = 0x102
-	Btn3              KeyType = 0x103
-	Btn4              KeyType = 0x104
-	Btn5              KeyType = 0x105
-	Btn6              KeyType = 0x106
-	Btn7              KeyType = 0x107
-	Btn8              KeyType = 0x108
-	Btn9              KeyType = 0x109
-	BtnMouse          KeyType = 0x110
-	BtnLeft           KeyType = 0x110
-	BtnRight          KeyType = 0x111
-	BtnMiddle         KeyType = 0x112
-	BtnSide           KeyType = 0x113
-	BtnExtra          KeyType = 0x114
-	BtnForward        KeyType = 0x115
-	BtnBack           KeyType = 0x116
-	BtnTask           KeyType = 0x117
-	BtnJoystick       KeyType = 0x120
-	BtnTrigger        KeyType = 0x120
-	BtnThumb          KeyType = 0x121
-	BtnThumb2         KeyType = 0x122
-	BtnTop            KeyType = 0x123
-	BtnTop2           KeyType = 0x124
-	BtnPinkie         KeyType = 0x125
-	BtnBase           KeyType = 0x126
-	BtnBase2          KeyType = 0x127
-	BtnBase3          KeyType = 0x128
-	BtnBase4          KeyType = 0x129
-	BtnBase5          KeyType = 0x12a
-	BtnBase6          KeyType = 0x12b
-	BtnDead           KeyType = 0x12f
-	BtnGamepad        KeyType = 0x130
-	BtnA              KeyType = 0x130
-	BtnB              KeyType = 0x131
-	BtnC              KeyType = 0x132
-	BtnX              KeyType = 0x133
-	BtnY              KeyType = 0x134
-	BtnZ              KeyType = 0x135
-	BtnTL             KeyType = 0x136
-	BtnTR             KeyType = 0x137
-	BtnTL2            KeyType = 0x138
-	BtnTR2            KeyType = 0x139
-	BtnSelect         KeyType = 0x13a
-	BtnStart          KeyType = 0x13b
-	BtnMode           KeyType = 0x13c
-	BtnThumbL         KeyType = 0x13d
-	BtnThumbR         KeyType = 0x13e
-	BtnDigi           KeyType = 0x140
+	Btn0 KeyType = 0x100
+	Btn1 KeyType = 0x101
+	Btn2 KeyType = 0x102
+	Btn3 KeyType = 0x103
+	Btn4 KeyType = 0x104
+	Btn5 KeyType = 0x105
+	Btn6 KeyType = 0x106
+	Btn7 KeyType = 0x107
+	Btn8 KeyType = 0x108
+	Btn9 KeyType = 0x109
+
+	BtnLeft    KeyType = 0x110
+	BtnRight   KeyType = 0x111
+	BtnMiddle  KeyType = 0x112
+	BtnSide    KeyType = 0x113
+	BtnExtra   KeyType = 0x114
+	BtnForward KeyType = 0x115
+	BtnBack    KeyType = 0x116
+	BtnTask    KeyType = 0x117
+	BtnMouse   KeyType = 0x110
+
+	BtnTrigger  KeyType = 0x120
+	BtnThumb    KeyType = 0x121
+	BtnThumb2   KeyType = 0x122
+	BtnTop      KeyType = 0x123
+	BtnTop2     KeyType = 0x124
+	BtnPinkie   KeyType = 0x125
+	BtnBase     KeyType = 0x126
+	BtnBase2    KeyType = 0x127
+	BtnBase3    KeyType = 0x128
+	BtnBase4    KeyType = 0x129
+	BtnBase5    KeyType = 0x12a
+	BtnBase6    KeyType = 0x12b
+	BtnDead     KeyType = 0x12f
+	BtnJoystick KeyType = 0x120
+
+	BtnA       KeyType = 0x130
+	BtnB       KeyType = 0x131
+	BtnC       KeyType = 0x132
+	BtnX       KeyType = 0x133
+	BtnY       KeyType = 0x134
+	BtnZ       KeyType = 0x135
+	BtnTL      KeyType = 0x136
+	BtnTR      KeyType = 0x137
+	BtnTL2     KeyType = 0x138
+	BtnTR2     KeyType = 0x139
+	BtnSelect  KeyType = 0x13a
+	BtnStart   KeyType = 0x13b
+	BtnMode    KeyType = 0x13c
+	BtnThumbL  KeyType = 0x13d
+	BtnThumbR  KeyType = 0x13e
+	BtnGamepad KeyType = 0x130
+
 	BtnToolPen        KeyType = 0x140
 	BtnTooLRubber     KeyType = 0x141
 	BtnToolBrush      KeyType = 0x142
@@ -683,10 +686,12 @@ const (
 	BtnToolDoubleTap  KeyType = 0x14d
 	BtnToolTrippleTap KeyType = 0x14e
 	BtnToolQuadTap    KeyType = 0x14f // Four fingers on trackpad
-	BtnWheel          KeyType = 0x150
-	BtnGearDown       KeyType = 0x150
-	BtnGearUp         KeyType = 0x151
-	BtnTriggerHappy   KeyType = 0x2c0
+	BtnDigi           KeyType = 0x140
+
+	BtnGearDown KeyType = 0x150
+	BtnGearUp   KeyType = 0x151
+	BtnWheel    KeyType = 0x150
+
 	BtnTriggerHappy1  KeyType = 0x2c0
 	BtnTriggerHappy2  KeyType = 0x2c1
 	BtnTriggerHappy3  KeyType = 0x2c2
@@ -727,6 +732,7 @@ const (
 	BtnTriggerHappy38 KeyType = 0x2e5
 	BtnTriggerHappy39 KeyType = 0x2e6
 	BtnTriggerHappy40 KeyType = 0x2e7
+	BtnTriggerHappy   KeyType = 0x2c0
 )
 
 // RelativeType is the relative axis event type.
@@ -831,7 +837,7 @@ type MiscType int
 
 const (
 	MiscSerial    MiscType = 0x00
-	MiscPulseLed  MiscType = 0x01
+	MiscPulseLED  MiscType = 0x01
 	MiscGesture   MiscType = 0x02
 	MiscRaw       MiscType = 0x03
 	MiscScan      MiscType = 0x04
@@ -916,7 +922,7 @@ const (
 	RepeatDelay  RepeatType = 0x00
 	RepeatPeriod RepeatType = 0x01
 
-	repMax = 0x01
+	repeatMax = 0x01
 )
 
 // EffectType is the force feedback effect type.
