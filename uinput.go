@@ -102,15 +102,16 @@ func (u *UserInput) Close() error {
 		fd := u.fd
 		u.fd = nil
 		err := ioctl(fd.Fd(), uiDevDestroy, 0)
+		fd.Close()
 		if err != nil {
 			return err
 		}
-		return fd.Close()
+		return nil
 	}
 	return nil
 }
 
-// Path returns the system path of the device.
+// Path returns the path of the device.
 func (u *UserInput) Path() string {
 	return u.path
 }
@@ -281,6 +282,28 @@ func WithTypes(types ...interface{}) UserInputOption {
 				panic(fmt.Sprintf("invalid type %T", typ))
 			}
 		}
+	}
+}
+
+// WithTypesFromDev is a user input (uinput) device option to copy the options
+// from a input event device.
+func WithTypesFromDev(d *Evdev) UserInputOption {
+	return func(u *UserInput) {
+		WithTypes(
+			d.EventTypes(),
+			d.SyncTypes(),
+			d.KeyTypes(),
+			d.RelativeTypes(),
+			d.AbsoluteTypes(),
+			d.MiscTypes(),
+			d.SwitchTypes(),
+			d.LEDTypes(),
+			//d.RepeatTypes(),
+			d.SoundTypes(),
+			d.EffectTypes(),
+			d.PowerTypes(),
+			d.EffectStatusTypes(),
+		)(u)
 	}
 }
 

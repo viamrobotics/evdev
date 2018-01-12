@@ -6,7 +6,6 @@ import (
 	"context"
 	"flag"
 	"log"
-	"net"
 	"os"
 	"os/signal"
 	"syscall"
@@ -28,30 +27,21 @@ func main() {
 	}
 	defer d.Close()
 
-	dserial := d.Serial()
-	log.Printf("opened %s [%s] from %s", d.Name(), dserial, *flagNode)
-
-	// create unique serial for user input device, to avoid collision issues in
-	// other software
-	userial := dserial + "_1"
-	if mac, err := net.ParseMAC(dserial); err == nil {
-		mac[len(mac)-1]++
-		userial = mac.String()
-	}
+	log.Printf("opened %s [%s] from %s", d.Name(), d.Serial(), *flagNode)
 
 	// create uinput device
-	u, err := evdev.NewUserInputDevice(
+	u, err := evdev.NewUserInput(
+		0644,
 		evdev.WithName(d.Name()+" relay"),
 		evdev.WithID(d.ID()),
-		evdev.WithEvents(d),
-		evdev.WithSerial(userial),
+		evdev.WithTypesFromEvdev(d),
 	)
 	if err != nil {
 		log.Fatal(err)
 	}
 	defer u.Close()
 
-	log.Printf("created %q [%s] for %s: ", d.Name(), d.Serial(), *flagNode, d.Path())
+	log.Printf("created %q [%s] for %s: %s", d.Name(), d.Serial(), *flagNode, u.Path())
 
 	// create context
 	ctxt, cancel := context.WithCancel(context.Background())
@@ -69,8 +59,7 @@ func main() {
 				if event == nil {
 					return
 				}
-
-				log.Printf("<- %v", event)
+				log.Printf("<- %+v", event)
 				go u.Send(*event)
 			}
 		}

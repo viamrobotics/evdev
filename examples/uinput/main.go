@@ -1,52 +1,35 @@
-// Command uinput is a evdev example demonstrating how to create a virtual user
-// input ("uinput") device and sending/receiving events for it.
+// Command uinput is a evdev example demonstrating creating a user input
+// device.
 package main
 
 import (
-	"context"
-	"flag"
 	"log"
+	"os"
+	"os/signal"
+	"syscall"
 
 	"github.com/kenshaw/evdev"
 )
 
-var (
-	flagNode = flag.String("node", "", "input device")
-)
-
 func main() {
-	flag.Parse()
-
-	// create
-	d, err := evdev.NewUserDevice()
+	u, err := evdev.NewUserInput(
+		0644,
+		evdev.WithID(evdev.ID{
+			BusType: evdev.BusUSB,
+			Vendor:  0x01,
+			Product: 0x02,
+			Version: 0x0a0b,
+		}),
+		evdev.WithName("test input device"),
+		evdev.WithPath("something"),
+	)
 	if err != nil {
 		log.Fatal(err)
 	}
 
-	// start polling
-	ch := d.Poll(context.Background())
+	log.Printf("created: %s", u.Path())
 
-loop:
-	for {
-		select {
-		case event := <-ch:
-			// channel closed
-			if event == nil {
-				break loop
-			}
-
-			switch typ := event.Type.(type) {
-			case evdev.KeyType:
-				if typ == evdev.KeyQ {
-					log.Printf("quitting")
-					break loop
-				}
-				log.Printf("received key event: %+v", event)
-
-			case evdev.AbsoluteType:
-				log.Printf("received absolute axis event: %+v", event)
-				log.Printf("   axis information: %+v", d.AbsoluteTypes()[typ])
-			}
-		}
-	}
+	sig := make(chan os.Signal, 1)
+	signal.Notify(sig, syscall.SIGINT, syscall.SIGTERM)
+	log.Printf("received interrupt: %s", <-sig)
 }
