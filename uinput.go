@@ -17,7 +17,6 @@ type UserInput struct {
 	id         ID
 	name       string
 	path       string
-	serial     string
 	effectsMax uint32
 
 	events map[EventType]bool
@@ -30,8 +29,7 @@ func NewUserInput(perm os.FileMode, opts ...UserInputOption) (*UserInput, error)
 
 	// setup
 	u := &UserInput{
-		name:   "<none>",
-		serial: "00:00:00:00:00:00",
+		name: "<none>",
 	}
 
 	// apply opts
@@ -72,8 +70,8 @@ func (u *UserInput) init(fd *os.File) error {
 		return err
 	}
 
-	// set serial
-	buf := append([]byte(u.serial), 0)
+	// set path
+	buf := append([]byte(u.path), 0)
 	err = ioctl(fd.Fd(), uiSetPhys, unsafe.Pointer(&buf[0]))
 	if err != nil {
 		fd.Close()
@@ -134,14 +132,10 @@ func WithName(name string) UserInputOption {
 	}
 }
 
-// WithSerial is a user input (uinput) device option to set the device serial
-// (unique identifier).
-//
-// Typically these are unique hardware serial id, such as on Bluetooth and USB
-// devices, these are typically hardware addresses.
-func WithSerial(serial string) UserInputOption {
+// WithPath is a user input (uinput) device option to set the device path.
+func WithPath(path string) UserInputOption {
 	return func(u *UserInput) {
-		u.serial = serial
+		u.path = path
 	}
 }
 
