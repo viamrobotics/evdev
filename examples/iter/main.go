@@ -1,3 +1,5 @@
+// Command iter is a evdev example demonstrating how to iterate input devices
+// and read their configuration.
 package main
 
 import (

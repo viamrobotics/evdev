@@ -2,7 +2,7 @@ package evdev
 
 //go:generate ./gen.sh
 
-//the values here are derived from linux/libedev's input-event-codes.h
+// derived from linux/libedev's input.h and input-event-codes.h
 
 // BusType is the device bus type.
 type BusType uint16
@@ -25,12 +25,12 @@ const (
 	BusADB          BusType = 0x17
 	BusI2C          BusType = 0x18
 	BusHost         BusType = 0x19
-	BusGSC          BusType = 0x1A
-	BusAtari        BusType = 0x1B
-	BusSPI          BusType = 0x1C
-	BusRMI          BusType = 0x1D
-	BusCEC          BusType = 0x1E
-	BusIntelISHTP   BusType = 0x1F
+	BusGSC          BusType = 0x1a
+	BusAtari        BusType = 0x1b
+	BusSPI          BusType = 0x1c
+	BusRMI          BusType = 0x1d
+	BusCEC          BusType = 0x1e
+	BusIntelISHTP   BusType = 0x1f
 )
 
 // EventType is the event type.
@@ -76,12 +76,12 @@ const (
 // state.
 type SyncType int
 
-// Sync types.
+// Sync event types.
 const (
-	SyncReport SyncType = iota
-	SyncConfig
-	SyncMTReport
-	SyncDropped
+	SyncReport   SyncType = 0
+	SyncConfig   SyncType = 1
+	SyncMTReport SyncType = 2
+	SyncDropped  SyncType = 3
 
 	syncMax = 0xf
 )
@@ -129,7 +129,7 @@ const (
 // 	    synchronization frame.
 type KeyType uint32
 
-// Keys.
+// Keys event types.
 const (
 	KeyReserved          KeyType = 0
 	KeyEscape            KeyType = 1
@@ -565,7 +565,7 @@ const (
 	keyMax = 0x2ff
 )
 
-// Mouse and gamepad buttons.
+// Mouse and gamepad buttons event types.
 const (
 	Btn0    KeyType = 0x100
 	Btn1    KeyType = 0x101
@@ -696,6 +696,7 @@ const (
 // respectively.
 type RelativeType int
 
+// Relative axis event types.
 const (
 	RelativeX      RelativeType = 0x00
 	RelativeY      RelativeType = 0x01
@@ -726,7 +727,7 @@ const (
 // AbsoluteMT<name> is used to describe multitouch input events.
 type AbsoluteType int
 
-// Absolute event types.
+// Absolute axis event types.
 const (
 	AbsoluteX             AbsoluteType = 0x00
 	AbsoluteY             AbsoluteType = 0x01
@@ -762,9 +763,9 @@ const (
 	AbsoluteMTOrientation AbsoluteType = 0x34 // Ellipse orientation
 	AbsoluteMTPositionX   AbsoluteType = 0x35 // Center X touch position
 	AbsoluteMTPositionY   AbsoluteType = 0x36 // Center Y touch position
-	AbsoluteMTToolTYPE    AbsoluteType = 0x37 // Type of touching device
-	AbsoluteMTBlobId      AbsoluteType = 0x38 // Group a set of packets as a blob
-	AbsoluteMTTrackingId  AbsoluteType = 0x39 // Unique ID of initiated contact
+	AbsoluteMTToolType    AbsoluteType = 0x37 // Type of touching device
+	AbsoluteMTBlobID      AbsoluteType = 0x38 // Group a set of packets as a blob
+	AbsoluteMTTrackingID  AbsoluteType = 0x39 // Unique ID of initiated contact
 	AbsoluteMTPressure    AbsoluteType = 0x3a // Pressure on contact area
 	AbsoluteMTDistance    AbsoluteType = 0x3b // Contact hover distance
 	AbsoluteMTToolX       AbsoluteType = 0x3c // Center X tool position
@@ -785,6 +786,7 @@ const (
 // provide this information, the driver must not provide it to user space.
 type MiscType int
 
+// Misc event types.
 const (
 	MiscSerial    MiscType = 0x00
 	MiscPulseLED  MiscType = 0x01
@@ -850,11 +852,11 @@ const (
 	ledMax = 0x0f
 )
 
-// Sound events are used for sending sound commands to simple sound output
+// SoundType events are used for sending sound commands to simple sound output
 // devices.
 type SoundType int
 
-// Sound types.
+// Sound event types.
 const (
 	SoundClick SoundType = 0x00
 	SoundBell  SoundType = 0x01
@@ -868,17 +870,18 @@ const (
 // Repeat events are used for specifying autorepeating events.
 type RepeatType int
 
+// Repeat event types.
 const (
 	RepeatDelay  RepeatType = 0x00
 	RepeatPeriod RepeatType = 0x01
 
-	repeatMax = 0x01
+	//repeatMax = 0x01
 )
 
 // EffectType is the force feedback effect type.
 type EffectType int
 
-// Force feedback effects.
+// Force feedback effect event types.
 const (
 	EffectRumble   EffectType = 0x50
 	EffectPeriodic EffectType = 0x51
@@ -897,16 +900,16 @@ const (
 	EffectSawDown  EffectType = 0x5c
 	EffectCustom   EffectType = 0x5d
 
-	effectMin         = EffectRumble
-	effectMax         = EffectRamp
-	effectWaveformMin = EffectSquare
-	effectWaveformMax = EffectCustom
+	//effectMin         = EffectRumble
+	effectMax = EffectRamp
+	//effectWaveformMin = EffectSquare
+	//effectWaveformMax = EffectCustom
 )
 
 // EffectPropType is the force feedback effect property type.
 type EffectPropType int
 
-// Effect property types.
+// Force feedback effect event types.
 const (
 	EffectPropGain       EffectPropType = 0x60
 	EffectPropAutoCenter EffectPropType = 0x61
@@ -917,7 +920,7 @@ const (
 // EffectDirType is the force feedback effect direction type.
 type EffectDirType uint16
 
-// Effect directions.
+// Force feedback effect directions.
 const (
 	EffectDirDown  EffectDirType = 0x0000 // 0 degrees
 	EffectDirLeft  EffectDirType = 0x4000 // 90 degrees
@@ -925,10 +928,10 @@ const (
 	EffectDirRight EffectDirType = 0xc000 // 270 degrees
 )
 
-// EffectStatus is the force feedback effect status.
+// EffectStatusType is the force feedback effect status event type.
 type EffectStatusType int
 
-// Force feedback status values.
+// Force feedback status event values.
 const (
 	EffectStatusStopped EffectStatusType = 0x00
 	EffectStatusPlaying EffectStatusType = 0x01
@@ -1006,13 +1009,13 @@ type PropertyType int
 
 // Input property types.
 const (
-	PropertyPointer           PropertyType = 0x00
-	PropertyDirect            PropertyType = 0x01
-	PropertyButtonPad         PropertyType = 0x02
-	PropertySemiMT            PropertyType = 0x03
-	PropertyTopButtonPad      PropertyType = 0x04
-	PropertyPointingStick     PropertyType = 0x05
-	PropertyTypeAccelerometer PropertyType = 0x06
+	PropertyPointer       PropertyType = 0x00
+	PropertyDirect        PropertyType = 0x01
+	PropertyButtonPad     PropertyType = 0x02
+	PropertySemiMT        PropertyType = 0x03
+	PropertyTopButtonPad  PropertyType = 0x04
+	PropertyPointingStick PropertyType = 0x05
+	PropertyAccelerometer PropertyType = 0x06
 
 	propertyMax = 0x1f
 )

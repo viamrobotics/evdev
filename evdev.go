@@ -2,7 +2,6 @@
 package evdev
 
 import (
-	"bytes"
 	"context"
 	"fmt"
 	"os"
@@ -27,25 +26,26 @@ type Evdev struct {
 	version   uint32
 	effectMax int32
 
-	events    map[EventType]bool
-	syncs     map[SyncType]bool
-	keys      map[KeyType]bool
-	miscs     map[MiscType]bool
-	absolutes map[AbsoluteType]Axis
-	relatives map[RelativeType]bool
-	switches  map[SwitchType]bool
-	leds      map[LEDType]bool
-	sounds    map[SoundType]bool
-	repeats   map[RepeatType]bool
-	effects   map[EffectType]bool
-	powers    map[PowerType]bool
-	effectss  map[EffectStatusType]bool
+	events     map[EventType]bool
+	syncs      map[SyncType]bool
+	keys       map[KeyType]bool
+	miscs      map[MiscType]bool
+	absolutes  map[AbsoluteType]Axis
+	relatives  map[RelativeType]bool
+	switches   map[SwitchType]bool
+	leds       map[LEDType]bool
+	sounds     map[SoundType]bool
+	effects    map[EffectType]bool
+	powers     map[PowerType]bool
+	effectss   map[EffectStatusType]bool
+	properties map[PropertyType]bool
+	//repeats    map[RepeatType]bool
 
 	out    chan Event
 	cancel context.CancelFunc
 }
 
-// Open creates a device from the aready open file descriptor.
+// Open creates a device from an open file descriptor.
 func Open(fd *os.File) *Evdev {
 	return &Evdev{fd: fd}
 }
@@ -56,9 +56,7 @@ func OpenFile(path string) (*Evdev, error) {
 	if err != nil {
 		return nil, err
 	}
-	return &Evdev{
-		fd: fd,
-	}, nil
+	return Open(fd), nil
 }
 
 // Close closes the underlying device file descriptor.
@@ -87,19 +85,19 @@ func (d *Evdev) Close() error {
 // these key events, we may lock ourselves out of the system and a hard reset
 // is required to restore it.
 func (d *Evdev) Lock() error {
-	return ioctl(d.fd.Fd(), _EVIOCGRAB, 1)
+	return ioctl(d.fd.Fd(), evGrab, 1)
 }
 
 // Unlock releases a lock, previously obtained through Lock.
 func (d *Evdev) Unlock() error {
-	return ioctl(d.fd.Fd(), _EVIOCGRAB, 0)
+	return ioctl(d.fd.Fd(), evGrab, 0)
 }
 
 // ID returns a device's identity information.
 func (d *Evdev) ID() ID {
 	var once sync.Once
 	once.Do(func() {
-		ioctl(d.fd.Fd(), _EVIOCGID, unsafe.Pointer(&d.id))
+		_ = ioctl(d.fd.Fd(), evGetID, unsafe.Pointer(&d.id))
 	})
 	return d.id
 }
@@ -108,12 +106,7 @@ func (d *Evdev) ID() ID {
 func (d *Evdev) Name() string {
 	var once sync.Once
 	once.Do(func() {
-		buf := make([]byte, 256)
-		ioctl(d.fd.Fd(), _EVIOCGNAME(256), unsafe.Pointer(&buf[0]))
-		if i := bytes.IndexByte(buf, 0); i != -1 {
-			buf = buf[:i]
-		}
-		d.name = string(buf)
+		d.name, _ = ioctlString(d.fd.Fd(), evGetName, 256)
 	})
 	return d.name
 }
@@ -139,12 +132,7 @@ func (d *Evdev) Name() string {
 func (d *Evdev) Path() string {
 	var once sync.Once
 	once.Do(func() {
-		buf := make([]byte, 256)
-		ioctl(d.fd.Fd(), _EVIOCGPHYS(256), unsafe.Pointer(&buf[0]))
-		if i := bytes.IndexByte(buf, 0); i != -1 {
-			buf = buf[:i]
-		}
-		d.path = string(buf)
+		d.path, _ = ioctlString(d.fd.Fd(), evGetPhys, 256)
 	})
 	return d.path
 }
@@ -155,12 +143,7 @@ func (d *Evdev) Path() string {
 func (d *Evdev) Serial() string {
 	var once sync.Once
 	once.Do(func() {
-		buf := make([]byte, 256)
-		ioctl(d.fd.Fd(), _EVIOCGUNIQ(256), unsafe.Pointer(&buf[0]))
-		if i := bytes.IndexByte(buf, 0); i != -1 {
-			buf = buf[:i]
-		}
-		d.serial = string(buf)
+		d.serial, _ = ioctlString(d.fd.Fd(), evGetUniq, 256)
 	})
 	return d.serial
 }
@@ -169,15 +152,27 @@ func (d *Evdev) Serial() string {
 func (d *Evdev) Version() (int, int, int) {
 	var once sync.Once
 	once.Do(func() {
-		ioctl(d.fd.Fd(), _EVIOCGVERSION, unsafe.Pointer(&d.version))
+		_ = ioctl(d.fd.Fd(), evGetVersion, unsafe.Pointer(&d.version))
 	})
 	return int(d.version>>16) & 0xffff, int(d.version>>8) & 0xff, int(d.version) & 0xff
+}
+
+// EffectMax retrieves the maximum number of force feedback effects supported
+// by the device.
+//
+// This is only applicable to devices with EventForceFeedback event support.
+func (d *Evdev) EffectMax() int {
+	var once sync.Once
+	once.Do(func() {
+		_ = ioctl(d.fd.Fd(), evGetEffects, unsafe.Pointer(&d.effectMax))
+	})
+	return int(d.effectMax)
 }
 
 // eventTypes retrieves the specified event type, and passes it to f.
 func (d *Evdev) eventTypes(typ, max int, f func(int)) error {
 	buf := make([]uint64, max/64+1*(max%64))
-	err := ioctl(d.fd.Fd(), _EVIOCGBIT(typ, max), unsafe.Pointer(&buf[0]))
+	err := ioctl(d.fd.Fd(), evGetBit(typ, max), unsafe.Pointer(&buf[0]))
 	if err != nil {
 		return err
 	}
@@ -357,16 +352,12 @@ func (d *Evdev) EffectStatusTypes() map[EffectStatusType]bool {
 	return d.effectss
 }
 
-// EffectMax retrieves the maximum number of force feedback effects supported
-// by the device.
-//
-// This is only applicable to devices with EventForceFeedback event support.
-func (d *Evdev) EffectMax() int {
+// Properties returns the device properties.
+func (d *Evdev) Properties() map[PropertyType]bool {
 	var once sync.Once
 	once.Do(func() {
-		ioctl(d.fd.Fd(), _EVIOCGEFFECTS, unsafe.Pointer(&d.effectMax))
 	})
-	return int(d.effectMax)
+	return d.properties
 }
 
 // IsKeyboard returns true if the device qualifies as a keyboard.
@@ -395,7 +386,7 @@ func (d *Evdev) IsJoystick() bool {
 // This is only applicable to devices with EventAbsolute event support.
 func (d *Evdev) absoluteAxis(axis AbsoluteType) Axis {
 	var abs Axis
-	ioctl(d.fd.Fd(), _EVIOCGABS(int(axis)), unsafe.Pointer(&abs))
+	_ = ioctl(d.fd.Fd(), evGetAbs(int(axis)), unsafe.Pointer(&abs))
 	return abs
 }
 
@@ -409,7 +400,7 @@ func (d *Evdev) absoluteAxis(axis AbsoluteType) Axis {
 // This is only applicable to devices with EventRepeat event support.
 func (d *Evdev) RepeatState() (uint, uint) {
 	var rep [2]int32
-	ioctl(d.fd.Fd(), _EVIOCGREP, unsafe.Pointer(&rep[0]))
+	_ = ioctl(d.fd.Fd(), evGetRep, unsafe.Pointer(&rep[0]))
 	return uint(rep[0]), uint(rep[1])
 }
 
@@ -428,7 +419,7 @@ func (d *Evdev) RepeatState() (uint, uint) {
 // This is only applicable to devices with EventRepeat event support.
 func (d *Evdev) RepeatStateSet(initial, subsequent uint) bool {
 	rep := [2]int32{int32(initial), int32(subsequent)}
-	return ioctl(d.fd.Fd(), _EVIOCSREP, unsafe.Pointer(&rep[0])) == nil
+	return ioctl(d.fd.Fd(), evSetRep, unsafe.Pointer(&rep[0])) == nil
 }
 
 // KeyState returns the current, global key- and button- states.
@@ -437,14 +428,14 @@ func (d *Evdev) RepeatStateSet(initial, subsequent uint) bool {
 /*func (d *Evdev) KeyState() Bitset {
 	b := NewBitset(keyMax)
 	buf := b.Bytes()
-	ioctl(d.fd.Fd(), _EVIOCGKEY(len(buf)), unsafe.Pointer(&buf[0]))
+	ioctl(d.fd.Fd(), evGetKEY(len(buf)), unsafe.Pointer(&buf[0]))
 	return b
 }*/
 
 // KeyMap retrieves the key mapping for the given key.
 func (d *Evdev) KeyMap(key KeyType) KeyMap {
 	m := KeyMap{Key: uint32(key)}
-	ioctl(d.fd.Fd(), _EVIOCGKEYCODE, unsafe.Pointer(&m))
+	_ = ioctl(d.fd.Fd(), evGetKeycode, unsafe.Pointer(&m))
 	return m
 }
 
@@ -465,7 +456,7 @@ func (d *Evdev) KeyMap(key KeyType) KeyMap {
 // Be aware that the KeyMap functions may not work on every keyboard. This is
 // only applicable to devices with EventKey event support.
 func (d *Evdev) KeyMapSet(m KeyMap) error {
-	return ioctl(d.fd.Fd(), _EVIOCSKEYCODE, unsafe.Pointer(&m))
+	return ioctl(d.fd.Fd(), evSetKeycode, unsafe.Pointer(&m))
 }
 
 // Poll polls the device for incoming events.
@@ -483,7 +474,7 @@ func (d *Evdev) Poll(ctxt context.Context) <-chan *EventEnvelope {
 	go func() {
 		defer close(ch)
 
-		buf := make([]byte, sizeof_event*count)
+		buf := make([]byte, sizeofEvent*count)
 		for {
 			// check context
 			select {
@@ -497,7 +488,7 @@ func (d *Evdev) Poll(ctxt context.Context) <-chan *EventEnvelope {
 			if err != nil {
 				return
 			}
-			events := (*(*[1<<27 - 1]Event)(unsafe.Pointer(&buf[0])))[:i/sizeof_event]
+			events := (*(*[1<<27 - 1]Event)(unsafe.Pointer(&buf[0])))[:i/sizeofEvent]
 			for _, e := range events {
 				switch e.Type {
 				case EventSync:
@@ -546,12 +537,12 @@ func (d *Evdev) Send(ev Event) error {
 			for {
 				select {
 				case event = <-d.out:
-					buf := (*(*[1<<27 - 1]byte)(unsafe.Pointer(&event)))[:sizeof_event]
+					buf := (*(*[1<<27 - 1]byte)(unsafe.Pointer(&event)))[:sizeofEvent]
 					n, err := d.fd.Write(buf)
 					if err != nil {
 						return
 					}
-					if n < sizeof_event {
+					if n < sizeofEvent {
 						fmt.Fprintf(os.Stderr, "poll outbox: short write\n")
 					}
 
@@ -577,7 +568,7 @@ func (d *Evdev) Send(ev Event) error {
 //
 // This is only applicable to devices with EventForceFeedback event support.
 func (d *Evdev) EffectSet(effect *Effect) error {
-	return ioctl(d.fd.Fd(), _EVIOCSFF, unsafe.Pointer(effect))
+	return ioctl(d.fd.Fd(), evSetFF, unsafe.Pointer(effect))
 }
 
 // EffectUnset deletes the given effects from the device. This makes room for
@@ -586,7 +577,7 @@ func (d *Evdev) EffectSet(effect *Effect) error {
 //
 // This is only applicable to devices with EventForceFeedback event support.
 func (d *Evdev) EffectUnset(effect *Effect) error {
-	return ioctl(d.fd.Fd(), _EVIOCRMFF, int(effect.ID))
+	return ioctl(d.fd.Fd(), evDelFF, int(effect.ID))
 }
 
 // effectSend sends the specified effect with the value.

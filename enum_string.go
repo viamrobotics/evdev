@@ -9,7 +9,7 @@ const (
 	_AbsoluteType_name_1 = "Hat0XHat0YHat1XHat1YHat2XHat2YHat3XHat3YPressureDistanceTiltXTiltYToolWidth"
 	_AbsoluteType_name_2 = "Volume"
 	_AbsoluteType_name_3 = "Misc"
-	_AbsoluteType_name_4 = "MTSlotMTTouchMajorMTTouchMinorMTWidthMajorMTWidthMinorMTOrientationMTPositionXMTPositionYMTToolTYPEMTBlobIdMTTrackingIdMTPressureMTDistanceMTToolXMTToolY"
+	_AbsoluteType_name_4 = "MTSlotMTTouchMajorMTTouchMinorMTWidthMajorMTWidthMinorMTOrientationMTPositionXMTPositionYMTToolTypeMTBlobIDMTTrackingIDMTPressureMTDistanceMTToolXMTToolY"
 )
 
 var (
@@ -733,9 +733,9 @@ func (i PowerType) String() string {
 	return _PowerType_name[_PowerType_index[i]:_PowerType_index[i+1]]
 }
 
-const _PropertyType_name = "PointerDirectButtonPadSemiMTTopButtonPadPointingStickTypeAccelerometer"
+const _PropertyType_name = "PointerDirectButtonPadSemiMTTopButtonPadPointingStickAccelerometer"
 
-var _PropertyType_index = [...]uint8{0, 7, 13, 22, 28, 40, 53, 70}
+var _PropertyType_index = [...]uint8{0, 7, 13, 22, 28, 40, 53, 66}
 
 func (i PropertyType) String() string {
 	if i < 0 || i >= PropertyType(len(_PropertyType_index)-1) {

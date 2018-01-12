@@ -11,11 +11,11 @@ import (
 //
 // The vendor, product and version fields are the device identifiers.
 //
-// Most modern devices (ie PCI, USB, Bluetooth, ...) devices have will
-// correctly provide the vendor and product information, however legacy devices
-// (such as serial mice, keyboards, etc.) will typically not have this
-// information available. As such, these values are only meaningful in the
-// context of interacting with a known, specific device.
+// Most modern devices (ie PCI, USB, Bluetooth, ...) devices will correctly
+// provide the vendor and product information, however legacy devices (such as
+// serial mice, keyboards, etc.) will typically not have this information
+// available. As such, these values are only meaningful in the context of
+// interacting with a known, specific device.
 type ID struct {
 	BusType BusType
 	Vendor  uint16
@@ -31,7 +31,7 @@ type Event struct {
 	Value int32
 }
 
-// Event wraps a event.
+// EventEnvelope wraps a event.
 type EventEnvelope struct {
 	Event
 	Type interface{}
@@ -40,22 +40,22 @@ type EventEnvelope struct {
 // Axis provides information for a specific absolute axis. This applies to
 // devices which support EventAbsolute events.
 type Axis struct {
-	// Val is the current value of the axis.
+	// Val is the axis value.
 	Val int32
 
 	// Min is the axis minimum.
-	Min int32 // Lower limit of axis.
+	Min int32
 
 	// Max is the axis maximum.
-	Max int32 // Upper limit of axis.
+	Max int32
 
 	// Fuzz is the axis fuzz factor.
-	Fuzz int32 // ???
+	Fuzz int32
 
-	// Flat is the size of the axis' flat section.
+	// Flat is the axis' flat section size.
 	Flat int32
 
-	// Res is the size of any error present.
+	// Res is the axis resolution.
 	Res int32
 }
 
@@ -248,8 +248,8 @@ type PeriodicEffect struct {
 	Phase     uint16
 	Envelope  EffectEnvelope
 
-	custom_len  uint32
-	custom_data unsafe.Pointer // *int16
+	customLen  uint32
+	customData unsafe.Pointer // *int16
 }
 
 // Data returns custom waveform information. This comes in the form of a signed
@@ -258,10 +258,10 @@ type PeriodicEffect struct {
 // The exact layout of a custom waveform is undefined for the time being as no
 // driver supports it yet.
 func (e *PeriodicEffect) Data() []int16 {
-	if e.custom_data == nil {
+	if e.customData == nil {
 		return nil
 	}
-	return (*(*[1<<27 - 1]int16)(e.custom_data))[:e.custom_len]
+	return (*(*[1<<27 - 1]int16)(e.customData))[:e.customLen]
 }
 
 // SetData sets custom waveform information.
@@ -269,10 +269,10 @@ func (e *PeriodicEffect) Data() []int16 {
 // The exact layout of a custom waveform is undefined for the time being as no
 // driver supports it yet.
 func (e *PeriodicEffect) SetData(v []int16) {
-	e.custom_len = uint32(len(v))
-	e.custom_data = unsafe.Pointer(nil)
+	e.customLen = uint32(len(v))
+	e.customData = unsafe.Pointer(nil)
 
-	if e.custom_len > 0 {
-		e.custom_data = unsafe.Pointer(&v[0])
+	if e.customLen > 0 {
+		e.customData = unsafe.Pointer(&v[0])
 	}
 }

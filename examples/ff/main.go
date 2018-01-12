@@ -1,21 +1,21 @@
-// This file is subject to a 1-clause BSD license.
-// Its contents can be found in the enclosed LICENSE file.
-
+// Command ff is a evdev example demonstrating how to send force feedback
+// events to a input device.
 package main
 
 import (
 	"flag"
 	"fmt"
-	"github.com/jteeuwen/evdev"
 	"os"
 	"os/signal"
+
+	"github.com/kenshaw/evdev"
 )
 
 func main() {
 	node := parseArgs()
 
 	// Create and open our device.
-	dev, err := evdev.Open(node)
+	dev, err := evdev.OpenFile(node)
 	if err != nil {
 		fmt.Fprintf(os.Stderr, "%v\n", err)
 		return
@@ -25,7 +25,7 @@ func main() {
 	defer dev.Close()
 
 	// Ensure this device supports the needed event types.
-	if !dev.Test(dev.EventTypes(), evdev.EvForceFeedback, evdev.EvForceFeedbackStatus) {
+	if !dev.EventTypes().Has(evdev.EvForceFeedback, evdev.EvForceFeedbackStatus) {
 		fmt.Fprintf(os.Stderr, "Device %q does not support force feedback events.\n", node)
 		return
 	}
@@ -48,7 +48,7 @@ func main() {
 //
 // Events are triggered whenever an effect's state is altered.
 // This only applies to devices with EvForceFeedbackStatus support.
-func poll(dev *evdev.Device) {
+func poll(dev *evdev.Evdev) {
 	signals := make(chan os.Signal, 1)
 	signal.Notify(signals, os.Interrupt, os.Kill)
 
@@ -75,7 +75,7 @@ func poll(dev *evdev.Device) {
 // This function uploads only 1 effect, but it can deal with
 // up to N effects at the same time. Where N is whatever value
 // returned from `Device.ForceFeedbackCaps()`.
-func setEffects(dev *evdev.Device) {
+func setEffects(dev *evdev.Evdev) {
 	_, caps := dev.ForceFeedbackCaps()
 
 	var effect evdev.Effect
@@ -90,15 +90,15 @@ func setEffects(dev *evdev.Device) {
 	// the device must support a given effect type.
 
 	switch {
-	case dev.Test(caps, evdev.FFRumble):
+	case caps.Has(evdev.FFRumble):
 		rumble(&effect)
-	case dev.Test(caps, evdev.FFPeriodic):
+	case caps.Has(evdev.FFPeriodic):
 		periodic(&effect)
-	case dev.Test(caps, evdev.FFConstant):
+	case caps.Has(evdev.FFConstant):
 		constant(&effect)
-	case dev.Test(caps, evdev.FFSpring):
+	case caps.Has(evdev.FFSpring):
 		spring(&effect)
-	case dev.Test(caps, evdev.FFDamper):
+	case caps.Has(evdev.FFDamper):
 		damper(&effect)
 	}
 
@@ -188,7 +188,7 @@ func periodic(e *evdev.Effect) {
 //
 // Testing for individual effect types can be done using the
 // Device.Supports() method.
-func listCapabilities(dev *evdev.Device) {
+func listCapabilities(dev *evdev.Evdev) {
 	// Fetch the force feedback capabilities.
 	// The number of simultaneous effects and a
 	// bitset describing the type of effects.
@@ -197,7 +197,7 @@ func listCapabilities(dev *evdev.Device) {
 	fmt.Printf("Number of simultaneous effects: %d\n", count)
 
 	for n := 0; n < caps.Len(); n++ {
-		if !caps.Test(n) {
+		if !caps.Has(n) {
 			continue
 		}
 

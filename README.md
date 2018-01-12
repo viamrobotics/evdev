@@ -1,110 +1,55 @@
-## evdev
+# About evdev
 
-**Note**: This is work in progress. Use at your own risk.
+`evdev` is a [`libevdev`][1] inspired Go package for working with Linux input
+devices. `evdev` works by making `ioctl` system calls for the Linux
+[`input`][2] and [`uinput`][3] subsystems. Because `evdev` is written in pure
+Go, it can be used without CGO.
 
-evdev is a pure Go implementation of the Linux evdev API.
-It allows a Go application to track events from any devices
-mapped to `/dev/input/event[X]`.
+`evdev` is used to poll events from, and send events to `/dev/input/event*`
+devices. Additionally, `evdev` provides the ability to create virtual `uinput`
+devices that can be used similarly.
 
+`evdev` is a rewrite of the [`github.com/jteeuwen/evdev`][4] package. Most of
+the credit for this package goes to `jteeuwen` for the original (and amazing!)
+work done.
 
-### TODO
+## Installing
 
-* Better error handling. The `Device` type now mostly ignores
-  ioctl errors once the device has been successfuly opened.
-  This is done to simplify the API. Some of the `SetXXX` methods
-  do return a boolean value to indicate success/failure, but
-  this is not consistently applied. Some of them work by
-  sending an `Event` struct to the device by queueing it
-  in the `Device.Outbox` channel. Which in turn is processed in
-  a separate goroutine (see `Device.pollOutbox`).
-  
-  We can currently not receive any return values from such
-  an operation. This includes possible errors. Should we
-  implement some sort of synchronous call mechanism for
-  these kind of writes? Ideally we do want to keep all
-  of the writes confined to the same goroutine.
-  
-  We do not necessarily need an actual error value, just
-  a boolean indicating success or failure.
-  ioctl errors are usually very non-descriptive anyway,
-  so there is little point in passing them around.
+`evdev` can be installed in the usual Go fashion:
 
+```sh
+$ go get -u github.com/kenshaw/evdev
+```
 
-### Known issues
+## Using
 
-#### Permissions
+Please see the [`examples`][5] directory for more examples.
 
-Opening nodes in `/dev/input` may require root access. This means that
-our client applications do as well. To solve this, there are a couple
-of options.
+## Permission Issues
 
-The most sensible one is to use a `udev` rule to give device access
-to anyone in the `input` group. Then add yourself to this group.
-This hinges on the question whether or not your system uses `udev`.
-For Arch Linux, `udev` comes pre-installed as a part of `systemd`.
+Reading events from input devices or creating virtual `uinput` devices requires
+`$USER` to have the appropriate system-level permissions. This can be accomplished
+by adding `$USER` to a group with read/write access to `/dev/input/event*` and
+`uinput` block devices.
 
-Here is a short listing of the steps to undertake to make this work,
-but we strongly advise that you read through the appropriate
-[documentation](http://www.reactivated.net/writing_udev_rules.html)
-on what `udev` rules are and how to safely create or edit them.
+Please refer to your relevant Linux distribution's documentation on adding
+`$USER` to the appropriate system group, or otherwise allowing read/write
+access to `/dev/input/event*` and `uinput` devices.
 
-As root, perform the following steps:
+**Note:** if adding a group to the current `$USER`, it will be necessary to log
+out and log back in before the system recognizes the group membership.
 
-	$ mkdir -p /etc/udev/rules.d
-	$ nano /etc/udev/rules.d/99-input.rules
+### Ubuntu/Debian
 
-Put this in the file:
+On Ubuntu/Debian systems, the current `$USER` can be added to the `input`
+group:
 
-	KERNEL=="event*", NAME="input/%k", MODE="660", GROUP="input"
+```sh
+$ sudo adduser $USER input
+```
 
-Save and exit nano. Then create the `input` group and add yourself to it:
-
-	$ groupadd -f input
-	$ gpasswd -a <YOURUSERNAME> input
-
-This will add any input devices to the `input` group. Only users who are in
-this group, will be able to read from them. Reboot your machine to make
-these changes take effect.
-
-`/dev/input' should now list someting like this:
-
-	$ ls -l /dev/input/
-	total 0
-	drwxr-xr-x 2 root root     120 Sep  7 18:10 by-id
-	drwxr-xr-x 2 root root     140 Sep  7 18:10 by-path
-	crw-rw---- 1 root input 13, 64 Sep  7 18:10 event0
-	crw-rw---- 1 root input 13, 65 Sep  7 18:10 event1
-	crw-rw---- 1 root input 13, 74 Sep  7 18:10 event10
-	crw-rw---- 1 root input 13, 75 Sep  7 18:10 event11
-	crw-rw---- 1 root input 13, 76 Sep  7 18:10 event12
-	crw-rw---- 1 root input 13, 77 Sep  7 18:10 event13
-	crw-rw---- 1 root input 13, 78 Sep  7 18:10 event14
-	crw-rw---- 1 root input 13, 66 Sep  7 18:10 event2
-	crw-rw---- 1 root input 13, 67 Sep  7 18:10 event3
-	crw-rw---- 1 root input 13, 68 Sep  7 18:10 event4
-	crw-rw---- 1 root input 13, 69 Sep  7 18:10 event5
-	crw-rw---- 1 root input 13, 70 Sep  7 18:10 event6
-	crw-rw---- 1 root input 13, 71 Sep  7 18:10 event7
-	crw-rw---- 1 root input 13, 72 Sep  7 18:10 event8
-	crw-rw---- 1 root input 13, 73 Sep  7 18:10 event9
-	crw-r----- 1 root root  13, 63 Sep  7 18:10 mice
-	crw-r----- 1 root root  13, 32 Sep  7 18:10 mouse0
-
-
-### Usage
-
-    go get github.com/jteeuwen/evdev
-
-
-### References
-
-* [linuxjournal.com](http://www.linuxjournal.com/node/6429/print)
-* [Documentation/input/event-codes.txt](https://www.kernel.org/doc/Documentation/input/event-codes.txt)
-* [Documentation/input/ff.txt](https://www.kernel.org/doc/Documentation/input/ff.txt)
-
-
-### License
-
-Unless otherwise stated, all of the work in this project is subject to a
-1-clause BSD license. Its contents can be found in the enclosed LICENSE file.
-
+[1]: https://www.freedesktop.org/wiki/Software/libevdev/
+[2]: https://www.kernel.org/doc/html/latest/input/index.html
+[3]: https://www.kernel.org/doc/html/latest/input/uinput.html
+[4]: https://github.com/jteeuwen/evdev
+[5]: /examples

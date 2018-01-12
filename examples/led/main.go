@@ -1,15 +1,15 @@
-// This file is subject to a 1-clause BSD license.
-// Its contents can be found in the enclosed LICENSE file.
-
+// Command led is a evdev example demonstrating how to send events (LED) to an
+// input device.
 package main
 
 import (
 	"flag"
 	"fmt"
-	"github.com/jteeuwen/evdev"
 	"os"
 	"os/signal"
 	"time"
+
+	"github.com/kenshaw/evdev"
 )
 
 const Timeout = 200 * time.Millisecond
@@ -18,7 +18,7 @@ func main() {
 	node := parseArgs()
 
 	// Create and open our device.
-	dev, err := evdev.Open(node)
+	dev, err := evdev.OpenFile(node)
 	if err != nil {
 		fmt.Fprintf(os.Stderr, "%v\n", err)
 		return
