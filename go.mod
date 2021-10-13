@@ -1,3 +1,3 @@
-module github.com/kenshaw/evdev
+module github.com/viamrobotics/evdev
 
 go 1.12

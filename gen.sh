@@ -1,5 +1,6 @@
 #!/bin/bash
 
+PATH=$PATH:`go env GOPATH`/bin
 rm -f enum_string.go
 
 TYPES=$(cat enum.go|sed -n '/^type /p'|awk '{print $2}'|sed -e 's/Type$//'|sort)

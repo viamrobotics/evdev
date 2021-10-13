@@ -6,6 +6,7 @@ import (
 	"fmt"
 	"os"
 	"sync"
+	"syscall"
 	"unsafe"
 )
 
@@ -484,6 +485,10 @@ func (d *Evdev) Poll(ctxt context.Context) <-chan *EventEnvelope {
 			}
 
 			// read events
+			err := syscall.SetNonblock(int(d.fd.Fd()), true)
+			if err != nil {
+				return
+			}
 			i, err := d.fd.Read(buf)
 			if err != nil {
 				return
