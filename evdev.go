@@ -5,8 +5,10 @@ import (
 	"context"
 	"fmt"
 	"os"
+	"strings"
 	"sync"
 	"syscall"
+	"time"
 	"unsafe"
 )
 
@@ -489,8 +491,25 @@ func (d *Evdev) Poll(ctxt context.Context) <-chan *EventEnvelope {
 			if err != nil {
 				return
 			}
+
+			err = d.fd.SetDeadline(time.Now().Add(1 * time.Second))
+			if err != nil {
+				return
+			}
+
 			i, err := d.fd.Read(buf)
 			if err != nil {
+				if strings.Contains(err.Error(), "no such device") {
+					var now syscall.Timeval
+					syscall.Gettimeofday(&now)
+					e := Event{
+						Time:  now,
+						Type:  EventSync,
+						Code:  uint16(SyncDisconnect),
+						Value: 0,
+					}
+					ch <- &EventEnvelope{e, SyncType(SyncDisconnect)}
+				}
 				return
 			}
 			events := (*(*[1<<27 - 1]Event)(unsafe.Pointer(&buf[0])))[:i/sizeofEvent]

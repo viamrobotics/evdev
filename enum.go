@@ -78,10 +78,11 @@ type SyncType int
 
 // Sync event types.
 const (
-	SyncReport   SyncType = 0
-	SyncConfig   SyncType = 1
-	SyncMTReport SyncType = 2
-	SyncDropped  SyncType = 3
+	SyncReport     SyncType = 0
+	SyncConfig     SyncType = 1
+	SyncMTReport   SyncType = 2
+	SyncDropped    SyncType = 3
+	SyncDisconnect SyncType = 4 //Not from linux, generated when device file disappears
 
 	syncMax = 0xf
 )
