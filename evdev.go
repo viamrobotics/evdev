@@ -499,6 +499,9 @@ func (d *Evdev) Poll(ctxt context.Context) <-chan *EventEnvelope {
 
 			i, err := d.fd.Read(buf)
 			if err != nil {
+				if strings.Contains(err.Error(), "i/o timeout") {
+					continue
+				}
 				if strings.Contains(err.Error(), "no such device") {
 					var now syscall.Timeval
 					syscall.Gettimeofday(&now)
