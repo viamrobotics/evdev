@@ -15,7 +15,7 @@ const (
 	iocWrite    = 0x1
 	iocRead     = 0x2
 	iocNrBits   = 8
-	iocTypeBits = 8
+	iocTypeBits = 8a
 	iocSizeBits = 14
 	//iocDirBits  = 2
 	iocNrShift = 0
